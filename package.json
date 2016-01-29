@@ -1,0 +1,25 @@
+{
+    "name": "ip-helpers",
+    "version": "0.1.0",
+    "description": "IP address helpers",
+    "main": "bld/index.js",
+    "scripts": {
+        "test": "node node_modules/mocha/bin/_mocha"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/vilic/ip-helpers.git"
+    },
+    "keywords": [],
+    "author": "vilicvane",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/vilic/ip-helpers/issues"
+    },
+    "homepage": "https://github.com/vilic/ip-helpers#readme",
+    "devDependencies": {
+        "mocha": "latest",
+        "chai": "latest",
+        "typescript": "latest"
+    }
+}
