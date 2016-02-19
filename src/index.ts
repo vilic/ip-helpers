@@ -5,47 +5,87 @@
     MIT License
 */
 
-import { networkInterfaces } from 'os';
+import { networkInterfaces, NetworkInterfaceInfo } from 'os';
 
 export interface QueryResult {
-    lanAddresses: string[];
-    wanAddresses: string[];
+    lanInterfaces: NetworkInterfaceInfo[];
+    wanInterfaces: NetworkInterfaceInfo[];
 }
 
 class Helpers {
+    static get lanInterfaces(): NetworkInterfaceInfo[] {
+        return queryInterfaces().lanInterfaces;
+    }
+
+    static get lanInterface(): NetworkInterfaceInfo {
+        let interfaces = Helpers.lanInterfaces;
+
+        if (interfaces.length) {
+            return interfaces[0];
+        } else {
+            return undefined;
+        }
+    }
+
     static get lanAddresses(): string[] {
-        return queryAddresses().lanAddresses;
+        return Helpers.lanInterfaces.map(ni => ni.address);
     }
-    
+
     static get lanAddress(): string {
-        return queryAddresses().lanAddresses[0];
+        let ni = Helpers.lanInterface;
+        return ni && ni.address;
     }
-    
+
+    static get wanInterfaces(): NetworkInterfaceInfo[] {
+        return queryInterfaces().wanInterfaces;
+    }
+
+    static get wanInterface(): NetworkInterfaceInfo {
+        let interfaces = Helpers.wanInterfaces;
+
+        if (interfaces.length) {
+            return interfaces[0];
+        } else {
+            return undefined;
+        }
+    }
+
     static get wanAddresses(): string[] {
-        return queryAddresses().wanAddresses;
+        return Helpers.wanInterfaces.map(ni => ni.address);
     }
-    
+
     static get wanAddress(): string {
-        return queryAddresses().wanAddresses[0];
+        let ni = Helpers.wanInterface;
+        return ni && ni.address;
     }
 }
+
+module.exports = exports = Helpers;
+
+export declare const lanAddress: string;
+export declare const lanAddresses: string[];
+export declare const lanInterface: NetworkInterfaceInfo;
+export declare const lanInterfaces: NetworkInterfaceInfo[];
+
+export declare const wanAddress: string;
+export declare const wanAddresses: string[];
+export declare const wanInterface: NetworkInterfaceInfo;
+export declare const wanInterfaces: NetworkInterfaceInfo[];
 
 let apipaRegex = /^169\.254\./;
 
 let lastQueryResult: QueryResult;
 
-module.exports = exports = Helpers;
-
-export function queryAddresses(): QueryResult {
+export function queryInterfaces(): QueryResult {
     let interfaceGroups = networkInterfaces();
-    
+
     if (!lastQueryResult) {
-        let lanAddresses: string[] = [];
-        let wanAddresses: string[] = [];
-        
+        let lanInterfaces: NetworkInterfaceInfo[] = [];
+        let wanInterfaces: NetworkInterfaceInfo[] = [];
+
         for (let name of Object.keys(interfaceGroups)) {
             let interfaces = interfaceGroups[name];
-            
+
             for (let ni of interfaces) {
                 if (
                     ni.internal ||
@@ -55,33 +95,33 @@ export function queryAddresses(): QueryResult {
                 ) {
                     continue;
                 }
-                
+
                 let address = ni.address;
-                
+
                 if (internalIsLANAddress(address)) {
-                    lanAddresses.push(address);
+                    lanInterfaces.push(ni);
                 } else {
-                    wanAddresses.push(address);
+                    wanInterfaces.push(ni);
                 }
             }
         }
-        
+
         lastQueryResult = {
-            lanAddresses,
-            wanAddresses
+            lanInterfaces,
+            wanInterfaces
         };
     }
-    
+
     setImmediate(() => {
         lastQueryResult = undefined;
     });
-    
+
     return lastQueryResult;
 }
 
 function internalIsLANAddress(address: string): boolean {
     let bytes = address.split('.').map(byte => Number(byte));
-    
+
     return bytes[0] === 10 ||
         (bytes[0] === 172 && (bytes[1] >> 4) === 1) ||
         (bytes[0] === 192 && bytes[1] === 168);
@@ -95,7 +135,14 @@ export function isWANAddress(address: string): boolean {
     return !internalIsLANAddress(address) && !apipaRegex.test(address);
 }
 
-export declare let lanAddress: string;
-export declare let lanAddresses: string[];
-export declare let wanAddress: string;
-export declare let wanAddresses: string[];
+export function calculateBroadcastAddress(address: string, netmask: string): string {
+    let addressParts = address.split('.').map(partStr => Number(partStr));
+    let netmaskParts = netmask.split('.').map(partStr => Number(partStr));
+
+    return addressParts
+        .map((addressPart, index) => {
+            let netmaskPart = netmaskParts[index];
+            return 255 - netmaskPart + (addressPart & netmaskPart);
+        })
+        .join('.');
+}

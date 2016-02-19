@@ -1,6 +1,6 @@
 {
     "name": "ip-helpers",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "IP address helpers",
     "main": "bld/index.js",
     "typings": "bld/index.d.ts",

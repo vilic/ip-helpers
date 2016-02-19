@@ -4,6 +4,7 @@
         "module": "commonjs",
         "noEmitOnError": true,
         "noImplicitAny": true,
+        "noImplicitReturns": true,
         "sourceMap": true,
         "declaration": true,
         "stripInternal": true,
