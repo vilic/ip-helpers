@@ -8,16 +8,20 @@
 import { networkInterfaces, NetworkInterfaceInfo } from 'os';
 
 export interface QueryResult {
-    lanInterfaces: NetworkInterfaceInfo[];
-    wanInterfaces: NetworkInterfaceInfo[];
+    lanInterfaces: NetworkInterface[];
+    wanInterfaces: NetworkInterface[];
+}
+
+export interface NetworkInterface extends NetworkInterfaceInfo {
+    name: string;
 }
 
 class Helpers {
-    static get lanInterfaces(): NetworkInterfaceInfo[] {
+    static get lanInterfaces(): NetworkInterface[] {
         return queryInterfaces().lanInterfaces;
     }
 
-    static get lanInterface(): NetworkInterfaceInfo {
+    static get lanInterface(): NetworkInterface {
         let interfaces = Helpers.lanInterfaces;
 
         if (interfaces.length) {
@@ -36,11 +40,11 @@ class Helpers {
         return ni && ni.address;
     }
 
-    static get wanInterfaces(): NetworkInterfaceInfo[] {
+    static get wanInterfaces(): NetworkInterface[] {
         return queryInterfaces().wanInterfaces;
     }
 
-    static get wanInterface(): NetworkInterfaceInfo {
+    static get wanInterface(): NetworkInterface {
         let interfaces = Helpers.wanInterfaces;
 
         if (interfaces.length) {
@@ -64,13 +68,13 @@ module.exports = exports = Helpers;
 
 export declare const lanAddress: string;
 export declare const lanAddresses: string[];
-export declare const lanInterface: NetworkInterfaceInfo;
-export declare const lanInterfaces: NetworkInterfaceInfo[];
+export declare const lanInterface: NetworkInterface;
+export declare const lanInterfaces: NetworkInterface[];
 
 export declare const wanAddress: string;
 export declare const wanAddresses: string[];
-export declare const wanInterface: NetworkInterfaceInfo;
-export declare const wanInterfaces: NetworkInterfaceInfo[];
+export declare const wanInterface: NetworkInterface;
+export declare const wanInterfaces: NetworkInterface[];
 
 let apipaRegex = /^169\.254\./;
 
@@ -80,25 +84,26 @@ export function queryInterfaces(): QueryResult {
     let interfaceGroups = networkInterfaces();
 
     if (!lastQueryResult) {
-        let lanInterfaces: NetworkInterfaceInfo[] = [];
-        let wanInterfaces: NetworkInterfaceInfo[] = [];
+        let lanInterfaces: NetworkInterface[] = [];
+        let wanInterfaces: NetworkInterface[] = [];
 
         for (let name of Object.keys(interfaceGroups)) {
             let interfaces = interfaceGroups[name];
 
-            for (let ni of interfaces) {
+            for (let info of interfaces) {
                 if (
-                    ni.internal ||
-                    ni.family !== 'IPv4' ||
-                    ni.mac == '00:00:00:00:00:00' ||
-                    apipaRegex.test(ni.address)
+                    info.internal ||
+                    info.family !== 'IPv4' ||
+                    info.mac == '00:00:00:00:00:00' ||
+                    apipaRegex.test(info.address)
                 ) {
                     continue;
                 }
 
-                let address = ni.address;
+                let ni = info as NetworkInterface;
+                ni.name = name;
 
-                if (internalIsLANAddress(address)) {
+                if (internalIsLANAddress(info.address)) {
                     lanInterfaces.push(ni);
                 } else {
                     wanInterfaces.push(ni);
